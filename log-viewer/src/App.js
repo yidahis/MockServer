@@ -8,6 +8,8 @@ function App() {
   const [error, setError] = useState(null);
   const [logFileNames, setLogFileNames] = useState([]); // 存储所有日志文件名
   const [isAtBottom, setIsAtBottom] = useState(true); // 标记是否滚动到底部
+  const [selectedResponseSegment, setSelectedResponseSegment] = useState('body'); // 添加响应信息的 segment 状态
+  const [selectedRequestSegment, setSelectedRequestSegment] = useState('body'); // 添加请求信息的 segment 状态
   const urlListRef = useRef(null); // 用于监听滚动事件
   const pollIntervalRef = useRef(null); // 轮询定时器引用
   const isInitialLoad = useRef(true); // 标记是否为初始加载
@@ -108,7 +110,9 @@ function App() {
       
       const response = await fetch(url);
       if (response.ok) {
-        const files = await response.json();
+        const data = await response.json();
+        // 修复：处理后端返回的数据格式 {files: [...]} 
+        const files = Array.isArray(data) ? data : (data.files || []);
         
         // 如果有新增文件
         if (files.length > 0) {
@@ -122,7 +126,9 @@ function App() {
           // 如果是初始加载且没有文件，则获取所有文件
           const allResponse = await fetch('http://localhost:3000/api/logs/files');
           if (allResponse.ok) {
-            const allFiles = await allResponse.json();
+            const allData = await allResponse.json();
+            // 修复：处理后端返回的数据格式 {files: [...]}
+            const allFiles = Array.isArray(allData) ? allData : (allData.files || []);
             setLogFileNames(allFiles);
             await fetchNewLogs(allFiles, savedSelectedLogId);
           }
@@ -158,7 +164,8 @@ function App() {
 
   // 获取新增日志数据
   const fetchNewLogs = async (newFileNames, savedSelectedLogId = null) => {
-    if (newFileNames.length === 0) {
+    // 修复：确保 newFileNames 是数组
+    if (!Array.isArray(newFileNames) || newFileNames.length === 0) {
       setLoading(false);
       return;
     }
@@ -255,7 +262,7 @@ function App() {
       isInitialLoad.current = false;
     } catch (error) {
       console.error('获取新增日志文件失败:', error);
-      setError('获取新增日志文件失败: ' + error.message);
+      setError('获取新增日志文件失败: ' + (error.message || error.toString()));
       setLoading(false);
       isInitialLoad.current = false;
     }
@@ -286,7 +293,6 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>请求日志查看器</h1>
         <p>共有 {logFileNames.length} 条请求日志</p>
       </header>
       <div className="logs-container">
@@ -314,18 +320,53 @@ function App() {
           {selectedLog ? (
             <>
               <div className="response-section">
-                <h2>响应信息</h2>
+                <h2>Response</h2>
+                {/* 添加 segment 控制 */}
+                <div className="segment-control">
+                  <button 
+                    className={selectedResponseSegment === 'body' ? 'active' : ''}
+                    onClick={() => setSelectedResponseSegment('body')}
+                  >
+                    Body
+                  </button>
+                  <button 
+                    className={selectedResponseSegment === 'headers' ? 'active' : ''}
+                    onClick={() => setSelectedResponseSegment('headers')}
+                  >
+                    Header
+                  </button>
+                </div>
                 <div className="response-content">
-                  <pre>{JSON.stringify(selectedLog.response, null, 2)}</pre>
+                  {selectedResponseSegment === 'body' ? (
+                    <pre>{JSON.stringify(selectedLog.response.body, null, 2)}</pre>
+                  ) : (
+                    <pre>{JSON.stringify(selectedLog.response.headers, null, 2)}</pre>
+                  )}
                 </div>
               </div>
               <div className="request-section">
-                <h2>请求信息</h2>
+                <h2>Response</h2>
+                {/* 添加请求信息的 segment 控制 */}
+                <div className="segment-control">
+                  <button 
+                    className={selectedRequestSegment === 'body' ? 'active' : ''}
+                    onClick={() => setSelectedRequestSegment('body')}
+                  >
+                    Body
+                  </button>
+                  <button 
+                    className={selectedRequestSegment === 'headers' ? 'active' : ''}
+                    onClick={() => setSelectedRequestSegment('headers')}
+                  >
+                    Header
+                  </button>
+                </div>
                 <div className="request-content">
-                  <pre>{JSON.stringify({
-                    headers: selectedLog.headers,
-                    body: selectedLog.body
-                  }, null, 2)}</pre>
+                  {selectedRequestSegment === 'body' ? (
+                    <pre>{JSON.stringify(selectedLog.body, null, 2)}</pre>
+                  ) : (
+                    <pre>{JSON.stringify(selectedLog.headers, null, 2)}</pre>
+                  )}
                 </div>
               </div>
             </>

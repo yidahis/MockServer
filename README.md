@@ -18,6 +18,7 @@ mockServer/
 │   │   └── App.css       # 应用样式
 │   ├── package.json      # 前端依赖配置
 │   └── .env              # 环境变量配置
+├── pyproject.toml        # Python 项目配置和依赖管理
 └── README.md             # 项目说明文档
 ```
 
@@ -66,9 +67,20 @@ mockServer/
 ### 主服务
 
 1. 安装依赖：
-```bash
-pip install flask flask-cors requests
-```
+   使用 pip 和 pyproject.toml（推荐）：
+   ```bash
+   pip install .
+   ```
+   
+   或者安装开发依赖：
+   ```bash
+   pip install .[dev]
+   ```
+   
+   或者使用传统方式：
+   ```bash
+   pip install flask flask-cors requests
+   ```
 
 2. 运行服务：
 ```bash

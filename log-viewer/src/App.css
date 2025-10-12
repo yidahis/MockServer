@@ -1,14 +1,16 @@
 .App {
   text-align: center;
+  background-color: #101010;
 }
 
 .App-header {
-  background-color: #282c34;
-  padding: 20px;
+  background-color: #3b3b3b;
+  padding: 5px;
   color: white;
 }
 
 .logs-container {
+  background-color: #101010;
   display: flex;
   height: calc(100vh - 100px);
   margin: 20px;
@@ -16,7 +18,7 @@
 
 .url-list {
   flex: 1;
-  border: 1px solid #ccc;
+  border: 1px solid #3b3b3b;
   border-radius: 4px;
   margin-right: 20px;
   overflow-y: auto;
@@ -26,6 +28,7 @@
 
 .url-list h2 {
   margin-top: 0;
+  color: #3b3b3b;
 }
 
 .url-list ul {
@@ -35,13 +38,14 @@
 }
 
 .url-list li {
-  border: 1px solid #eee;
+  border: 1px solid #3b3b3b;
   border-radius: 4px;
   margin-bottom: 10px;
   padding: 10px;
   cursor: pointer;
   text-align: left;
   transition: background-color 0.2s;
+  color: #666;
 }
 
 .url-list li:hover {
@@ -49,19 +53,19 @@
 }
 
 .url-list li.selected {
-  background-color: #3c3b3b;
+  background-color: #3b3b3b;
   color: white;
 }
 
 .url-list .method {
   font-weight: bold;
-  color: #007bff;
+  color: #8a8383;
 }
 
 .url-list .url {
   word-break: break-all;
   margin: 5px 0;
-  font-size: 0.9em;
+  font-size: 1em;
 }
 
 .url-list .timestamp {
@@ -73,7 +77,7 @@
   flex: 2;
   display: flex;
   flex-direction: column;
-  border: 1px solid #ccc;
+  border: 1px solid #3b3b3b;
   border-radius: 4px;
   padding: 10px;
   overflow-y: auto;
@@ -81,7 +85,7 @@
 
 .response-section, .request-section {
   flex: 1;
-  border: 1px solid #eee;
+  border: 1px solid #3b3b3b;
   border-radius: 4px;
   margin-bottom: 10px;
   padding: 10px;
@@ -90,6 +94,7 @@
 
 .response-section h2, .request-section h2 {
   margin-top: 0;
+  color: #3b3b3b;
 }
 
 .response-content, .request-content {
@@ -98,6 +103,7 @@
   padding: 10px;
   border-radius: 4px;
   overflow-x: auto;
+  border: 1px solid #3b3b3b;
 }
 
 pre {
@@ -109,7 +115,7 @@ pre {
 .loading, .loaded-all {
   text-align: center;
   padding: 10px;
-  color: #666;
+  color: #3b3b3b;
   font-style: italic;
 }
 
@@ -119,15 +125,62 @@ pre {
 }
 
 .url-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #000000;
   border-radius: 4px;
 }
 
 .url-list::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #3b3b3b;
   border-radius: 4px;
 }
 
 .url-list::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Segment 控制样式 */
+.segment-control {
+  display: flex;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #3b3b3b;
+}
+
+.segment-control button {
+  background-color: #3b3b3b;
+  color: #ccc;
+  border: 1px solid #3b3b3b;
+  border-bottom: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-radius: 5px 5px 0 0;
+}
+
+.segment-control button.active {
+  background-color: #747373;
+  color: #fff;
+  border-color: #3b3b3b;
+}
+
+.segment-control button:hover {
+  background-color: #3a3a3a;
+}
+
+.response-content, .request-content {
+  background-color: #2d2d2d;
+  border: 1px solid #3b3b3b;
+  border-radius: 4px;
+  padding: 15px;
+  overflow: auto;
+  max-height: 400px;
+}
+
+.response-content pre, .request-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #ccc;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.4;
 }
