@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/default.css';
+import { html as formatHtml } from 'js-beautify';
+import ReactJson from 'react-json-view';
 
 function App() {
   const [logs, setLogs] = useState([]);
@@ -286,6 +290,108 @@ function App() {
     setSelectedLog(log);
   };
 
+  // 检查内容是否为HTML
+  const isHtmlContent = (content) => {
+    if (typeof content !== 'string') return false;
+    const trimmedContent = content.trim();
+    return trimmedContent.startsWith('<') && trimmedContent.endsWith('>') && 
+           (trimmedContent.includes('<html') || trimmedContent.includes('<!DOCTYPE') || 
+            trimmedContent.includes('<div') || trimmedContent.includes('<span') ||
+            trimmedContent.includes('<p') || trimmedContent.includes('<body') ||
+            trimmedContent.includes('<head') || trimmedContent.includes('<table') ||
+            trimmedContent.includes('<ul') || trimmedContent.includes('<ol'));
+  };
+
+  // 检查内容是否为JSON字符串
+  const isJsonString = (content) => {
+    if (typeof content !== 'string') return false;
+    try {
+      const parsed = JSON.parse(content);
+      // 确保它是一个对象或数组，而不是简单的字符串或数字
+      return typeof parsed === 'object' && parsed !== null;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // 渲染内容（支持HTML格式化和高亮、JSON高亮显示）
+  const renderContent = (content) => {
+    // 如果是HTML内容，则进行格式化和高亮处理
+    if (isHtmlContent(content)) {
+      try {
+        // 格式化HTML
+        const formattedHtml = formatHtml(content, {
+          indent_size: 2,
+          wrap_line_length: 80,
+          preserve_newlines: true,
+          max_preserve_newlines: 2
+        });
+        
+        // 高亮处理
+        const highlightedHtml = hljs.highlight(formattedHtml, { language: 'html' }).value;
+        return <pre dangerouslySetInnerHTML={{ __html: highlightedHtml }} />;
+      } catch (e) {
+        // 如果格式化或高亮处理失败，则直接显示原始内容
+        console.warn('HTML格式化或高亮处理失败:', e);
+        return <pre>{content}</pre>;
+      }
+    }
+    
+    // 如果是JSON字符串，则进行解析和高亮显示
+    if (isJsonString(content)) {
+      try {
+        const parsedJson = JSON.parse(content);
+        return (
+          <ReactJson 
+            src={parsedJson}
+            name={false}
+            collapsed={false}
+            displayDataTypes={false}
+            displayObjectSize={false}
+            enableClipboard={true}
+            indentWidth={2}
+            theme=" Brewer"
+            style={{
+              backgroundColor: '#2d2d2d',
+              padding: '1em',
+              borderRadius: '4px',
+              overflow: 'auto'
+            }}
+          />
+        );
+      } catch (e) {
+        // 如果解析失败，则直接显示原始内容
+        console.warn('JSON解析失败:', e);
+        return <pre>{content}</pre>;
+      }
+    }
+    
+    // 如果是对象或数组，则直接进行高亮显示
+    if (typeof content === 'object' && content !== null) {
+      return (
+        <ReactJson 
+          src={content}
+          name={false}
+          collapsed={false}
+          displayDataTypes={false}
+          displayObjectSize={false}
+          enableClipboard={true}
+          indentWidth={2}
+          theme=" Brewer"
+          style={{
+            backgroundColor: '#2d2d2d',
+            padding: '1em',
+            borderRadius: '4px',
+            overflow: 'auto'
+          }}
+        />
+      );
+    }
+    
+    // 其他情况直接显示
+    return <pre>{String(content)}</pre>;
+  };
+
   if (error) {
     return <div className="App">错误: {error}</div>;
   }
@@ -338,14 +444,14 @@ function App() {
                 </div>
                 <div className="response-content">
                   {selectedResponseSegment === 'body' ? (
-                    <pre>{JSON.stringify(selectedLog.response.body, null, 2)}</pre>
+                    renderContent(selectedLog.response.body)
                   ) : (
                     <pre>{JSON.stringify(selectedLog.response.headers, null, 2)}</pre>
                   )}
                 </div>
               </div>
               <div className="request-section">
-                <h2>Response</h2>
+                <h2>Request</h2>
                 {/* 添加请求信息的 segment 控制 */}
                 <div className="segment-control">
                   <button 
@@ -363,7 +469,7 @@ function App() {
                 </div>
                 <div className="request-content">
                   {selectedRequestSegment === 'body' ? (
-                    <pre>{JSON.stringify(selectedLog.body, null, 2)}</pre>
+                    renderContent(selectedLog.body)
                   ) : (
                     <pre>{JSON.stringify(selectedLog.headers, null, 2)}</pre>
                   )}

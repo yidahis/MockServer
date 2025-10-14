@@ -1,11 +1,12 @@
 .App {
   text-align: center;
   background-color: #101010;
+  color: #ffffff;
 }
 
 .App-header {
   background-color: #3b3b3b;
-  padding: 5px;
+  padding: 20px;
   color: white;
 }
 
@@ -59,13 +60,13 @@
 
 .url-list .method {
   font-weight: bold;
-  color: #8a8383;
+  color: #3b3b3b;
 }
 
 .url-list .url {
   word-break: break-all;
   margin: 5px 0;
-  font-size: 1em;
+  font-size: 0.9em;
 }
 
 .url-list .timestamp {
@@ -157,7 +158,7 @@ pre {
 }
 
 .segment-control button.active {
-  background-color: #747373;
+  background-color: #3b3b3b;
   color: #fff;
   border-color: #3b3b3b;
 }
@@ -183,4 +184,123 @@ pre {
   font-family: 'Courier New', monospace;
   font-size: 14px;
   line-height: 1.4;
+}
+
+/* Highlight.js 样式 */
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-attribute {
+  color: #6c757d;
+}
+
+.hljs-built_in,
+.hljs-selector-tag,
+.hljs-section,
+.hljs-link {
+  color: #00bfff;
+}
+
+.hljs-keyword {
+  color: #e4e4e4;
+  display: inline-block;
+}
+
+.hljs-string {
+  color: #f9a8d4;
+}
+
+.hljs-title,
+.hljs-attr,
+.hljs-meta-keyword {
+  color: #61aeee;
+}
+
+.hljs-comment,
+.hljs-meta {
+  color: #7f848e;
+}
+
+.hljs-literal,
+.hljs-number {
+  color: #00bfff;
+}
+
+.hljs-regexp {
+  color: #d16969;
+}
+
+.hljs-function .hljs-title {
+  color: #dcdcaa;
+}
+
+.hljs-operator {
+  color: #d4d4d4;
+}
+
+.hljs-subst {
+  color: #d4d4d4;
+}
+
+.hljs-type {
+  color: #4ec9b0;
+}
+
+.hljs-variable {
+  color: #9cdcfe;
+}
+
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: #d7ba7d;
+}
+
+.hljs-addition {
+  background-color: #144212;
+  color: #e6e1dc;
+  display: inline-block;
+  width: 100%;
+}
+
+.hljs-deletion {
+  background-color: #600;
+  color: #e6e1dc;
+  display: inline-block;
+  width: 100%;
+}
+
+/* JSON Viewer 样式调整 */
+.react-json-view {
+  background-color: #2d2d2d !important;
+}
+
+.react-json-view .variable-row {
+  transition: background-color 0.2s;
+}
+
+.react-json-view .variable-row:hover {
+  background-color: #3a3a3a !important;
+}
+
+/* JSON key 样式 */
+.react-json-view .object-key {
+  color: #e4e4e4 !important;
+}
+
+/* 修改后的样式 */
+body {
+    font-family: Tahoma, Arial, sans-serif;
+    background-color: #1e1e1e; /* 更改背景颜色为暗色主题 */
+    color: #d4d4d4; /* 更改文本颜色为亮色 */
+}
+
+h1, h2, h3, b {
+    color: #f9a8d4; /* 更改标题和加粗文本的颜色 */
 }

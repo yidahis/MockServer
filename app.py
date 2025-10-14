@@ -87,6 +87,13 @@ def handle_request(path):
         
         # 转发请求
         headers = {key: value for key, value in request.headers.items() if key.lower() != 'host'}
+        
+        # 修复请求头中Content-Length和Transfer-Encoding的冲突
+        if 'Transfer-Encoding' in headers:
+            headers.pop('Content-Length', None)
+        elif 'Content-Length' in headers:
+            headers.pop('Transfer-Encoding', None)
+            
         if request.method == 'GET':
             response = requests.get(forward_url, headers=headers, params=request.args)
         elif request.method == 'POST':
@@ -134,7 +141,14 @@ def handle_request(path):
             json.dump(log_data, f, ensure_ascii=False, indent=2)
         
         # 返回转发的响应
-        return Response(response.text, status=response.status_code, headers=dict(response.headers))
+        # 清理可能冲突的头部
+        response_headers = dict(response.headers)
+        if 'Transfer-Encoding' in response_headers:
+            response_headers.pop('Content-Length', None)
+        elif 'Content-Length' in response_headers:
+            response_headers.pop('Transfer-Encoding', None)
+            
+        return Response(response.text, status=response.status_code, headers=response_headers)
     except Exception as e:
         return {'error': str(e)}, 500
 
