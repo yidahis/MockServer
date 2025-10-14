@@ -4,6 +4,9 @@ from flask import Flask, request, Response, send_from_directory
 from flask_cors import CORS
 import requests
 from datetime import datetime
+import time
+import hashlib
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)  # 添加CORS支持
@@ -82,73 +85,57 @@ def handle_request(path):
         # 构造转发URL
         forward_url = f"{origin_host.rstrip('/')}/{path.lstrip('/')}"
         
-        # 记录开始时间
-        start_time = datetime.now()
-        
-        # 转发请求
-        headers = {key: value for key, value in request.headers.items() if key.lower() != 'host'}
-        
-        # 修复请求头中Content-Length和Transfer-Encoding的冲突
-        if 'Transfer-Encoding' in headers:
-            headers.pop('Content-Length', None)
-        elif 'Content-Length' in headers:
-            headers.pop('Transfer-Encoding', None)
-            
-        if request.method == 'GET':
-            response = requests.get(forward_url, headers=headers, params=request.args)
-        elif request.method == 'POST':
-            response = requests.post(forward_url, headers=headers, json=body)
-        elif request.method == 'PUT':
-            response = requests.put(forward_url, headers=headers, json=body)
-        elif request.method == 'DELETE':
-            response = requests.delete(forward_url, headers=headers)
-        elif request.method == 'PATCH':
-            response = requests.patch(forward_url, headers=headers, json=body)
-        
-        # 计算耗时
-        cost = (datetime.now() - start_time).total_seconds()
-        
-        # 记录日志
-        log_data = {
-            'timestamp': start_time.isoformat(),
-            'method': request.method,
-            'full-url': request.url,
-            'path': path,
-            'headers': dict(request.headers),
-            'body': body,
-            'response': {
-                'status_code': response.status_code,
-                'headers': dict(response.headers),
-                'body': response.text
-            },
-            'cost': cost
+    # 记录开始时间（使用 time.time() 浮点数，便于后续计算）
+        start_time = time.time()
+
+        full_url = request.url
+        req_info = {
+        'timestamp': datetime.now().isoformat(),
+        'method': request.method,
+        'full-url': full_url,
+        'headers': dict(request.headers),
+        'body': body
         }
         
-        # 保存日志文件
-        if not os.path.exists(LOGS_DIR):
-            os.makedirs(LOGS_DIR)
-            
-        # 生成日志文件名（时间戳+内容hash）
-        content_hash = hash(json.dumps({
-            'method': request.method,
-            'url': request.url,
-            'body': body
-        }))
-        log_filename = f"{int(start_time.timestamp() * 1000)}_{abs(content_hash)}.json"
-        log_filepath = os.path.join(LOGS_DIR, log_filename)
+        # 转发请求
+        target_url = request.headers.get("origin-host")
+        resp = requests.request(
+            method=request.method,
+            url=target_url,
+            headers={k: v for k, v in request.headers.items() if k.lower() != 'host'},
+            json=body if request.method == 'POST' else None
+        )
+        safe_headers = {k: v for k, v in resp.headers.items() if k.lower() not in ['content-length', 'transfer-encoding', 'connection', 'content-encoding']}
+        resp_info = {
+            'url': target_url,
+            'status_code': resp.status_code,
+            'headers': safe_headers,
+            'body': resp.content.decode('utf-8', errors='replace')
+        }
+
+        log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+        def safe_log_path(name):
+            h = hashlib.md5(name.encode('utf-8')).hexdigest()
+            ts = int(time.time()*1000)
+            return os.path.join(log_dir, f"{ts}_{h}.json")
         
-        with open(log_filepath, 'w', encoding='utf-8') as f:
-            json.dump(log_data, f, ensure_ascii=False, indent=2)
-        
-        # 返回转发的响应
-        # 清理可能冲突的头部
-        response_headers = dict(response.headers)
-        if 'Transfer-Encoding' in response_headers:
-            response_headers.pop('Content-Length', None)
-        elif 'Content-Length' in response_headers:
-            response_headers.pop('Transfer-Encoding', None)
-            
-        return Response(response.text, status=response.status_code, headers=response_headers)
+        req_info['cost'] = round(time.time() - start_time, 4)
+        req_info['response'] = resp_info
+        # 保存日志
+        log_path = safe_log_path(target_url or url)
+        try:
+            print(f"[LOG] Writing to {log_path}")
+            with open(log_path, 'w', encoding='utf-8') as f:
+                json.dump(req_info, f, ensure_ascii=False, indent=2)
+            print(f"[LOG] Write success: {log_path}")
+        except Exception as log_err:
+            print(f"[LOG] Write failed: {log_path}, error: {log_err}")
+            fallback_path = os.path.join(log_dir, f"fallback_{int(time.time()*1000)}.json")
+            with open(fallback_path, 'w', encoding='utf-8') as f:
+                json.dump({'error': str(log_err), 'data': req_info}, f, ensure_ascii=False, indent=2)
+        response = Response(resp.content, status=resp.status_code, headers=safe_headers)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
     except Exception as e:
         return {'error': str(e)}, 500
 
