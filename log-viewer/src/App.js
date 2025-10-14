@@ -553,17 +553,22 @@ function App() {
   const filterLogs = (logs, filterText, filterType) => {
     if (!filterText) return logs;
     
+    // 将筛选文本转换为小写以实现不区分大小写的筛选
+    const lowerCaseFilterText = filterText.toLowerCase();
+    
     return logs.filter(log => {
       switch (filterType) {
         case 'URL':
-          return log['full-url'] && typeof log['full-url'] === 'string' && log['full-url'].includes(filterText);
+          return log['full-url'] && 
+                 typeof log['full-url'] === 'string' && 
+                 log['full-url'].toLowerCase().includes(lowerCaseFilterText);
         case 'Request':
           // 检查请求body是否包含筛选文本
           if (log.body) {
             if (typeof log.body === 'string') {
-              return log.body.includes(filterText);
+              return log.body.toLowerCase().includes(lowerCaseFilterText);
             } else if (typeof log.body === 'object') {
-              return JSON.stringify(log.body).includes(filterText);
+              return JSON.stringify(log.body).toLowerCase().includes(lowerCaseFilterText);
             }
           }
           return false;
@@ -571,9 +576,9 @@ function App() {
           // 检查响应body是否包含筛选文本
           if (log.response && log.response.body) {
             if (typeof log.response.body === 'string') {
-              return log.response.body.includes(filterText);
+              return log.response.body.toLowerCase().includes(lowerCaseFilterText);
             } else if (typeof log.response.body === 'object') {
-              return JSON.stringify(log.response.body).includes(filterText);
+              return JSON.stringify(log.response.body).toLowerCase().includes(lowerCaseFilterText);
             }
           }
           return false;
