@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './App.css';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/default.css';
+// 将默认主题更换为atom-one-dark主题
+import 'highlight.js/styles/atom-one-dark.css';
+// 调整导入顺序，确保自定义样式覆盖主题样式
+import './App.css';
 import { html as formatHtml } from 'js-beautify';
 import ReactJson from 'react-json-view';
 
@@ -286,7 +288,7 @@ function App() {
     }
   }, []);
 
-  const handleSelectLog = (log) => {
+  const handleSelectLog = (log, index) => {
     setSelectedLog(log);
   };
 
@@ -350,7 +352,7 @@ function App() {
             displayObjectSize={false}
             enableClipboard={true}
             indentWidth={2}
-            theme=" Brewer"
+            theme="monokai"
             style={{
               backgroundColor: '#2d2d2d',
               padding: '1em',
@@ -377,7 +379,7 @@ function App() {
           displayObjectSize={false}
           enableClipboard={true}
           indentWidth={2}
-          theme=" Brewer"
+          theme="monokai"
           style={{
             backgroundColor: '#2d2d2d',
             padding: '1em',
@@ -410,8 +412,10 @@ function App() {
               <li 
                 key={index} 
                 className={selectedLog && selectedLog.timestamp === log.timestamp ? 'selected' : ''}
-                onClick={() => handleSelectLog(log)}
+                onClick={() => handleSelectLog(log, index)}
               >
+                {/* 添加序号显示 */}
+                <span className="sequence-number">{index + 1}</span>
                 <div className="method">{log.method}</div>
                 <div className="url">{log['full-url']}</div>
                 <div className="timestamp">{new Date(log.timestamp).toLocaleString()}</div>
@@ -420,11 +424,11 @@ function App() {
           </ul>
           {loading && <div className="loading">加载中...</div>}
         </div>
-        
+
         {/* 右侧详情 */}
         <div className="log-details">
           {selectedLog ? (
-            <>
+            <div className="details-container">
               <div className="response-section">
                 <h2>Response</h2>
                 {/* 添加 segment 控制 */}
@@ -446,7 +450,22 @@ function App() {
                   {selectedResponseSegment === 'body' ? (
                     renderContent(selectedLog.response.body)
                   ) : (
-                    <pre>{JSON.stringify(selectedLog.response.headers, null, 2)}</pre>
+                    <ReactJson 
+                      src={selectedLog.response.headers}
+                      name={false}
+                      collapsed={false}
+                      displayDataTypes={false}
+                      displayObjectSize={false}
+                      enableClipboard={true}
+                      indentWidth={2}
+                      theme="monokai"
+                      style={{
+                        backgroundColor: '#2d2d2d',
+                        padding: '1em',
+                        borderRadius: '4px',
+                        overflow: 'auto'
+                      }}
+                    />
                   )}
                 </div>
               </div>
@@ -471,11 +490,26 @@ function App() {
                   {selectedRequestSegment === 'body' ? (
                     renderContent(selectedLog.body)
                   ) : (
-                    <pre>{JSON.stringify(selectedLog.headers, null, 2)}</pre>
+                    <ReactJson 
+                      src={selectedLog.headers}
+                      name={false}
+                      collapsed={false}
+                      displayDataTypes={false}
+                      displayObjectSize={false}
+                      enableClipboard={true}
+                      indentWidth={2}
+                      theme="monokai"
+                      style={{
+                        backgroundColor: '#2d2d2d',
+                        padding: '1em',
+                        borderRadius: '4px',
+                        overflow: 'auto'
+                      }}
+                    />
                   )}
                 </div>
               </div>
-            </>
+            </div>
           ) : (
             <p>请选择一个请求查看详细信息</p>
           )}

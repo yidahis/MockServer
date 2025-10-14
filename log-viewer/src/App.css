@@ -6,7 +6,7 @@
 
 .App-header {
   background-color: #3b3b3b;
-  padding: 20px;
+  padding: 1px;
   color: white;
 }
 
@@ -74,23 +74,49 @@
   color: #666;
 }
 
+.url-list li .sequence-number {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #3b3b3b;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.8em;
+}
+
 .log-details {
   flex: 2;
+  display: flex;
+  border: 1px solid #3b3b3b;
+  border-radius: 4px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.details-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.response-section, .request-section {
+  flex: 1;
   display: flex;
   flex-direction: column;
   border: 1px solid #3b3b3b;
   border-radius: 4px;
   padding: 10px;
-  overflow-y: auto;
+  margin: 0 5px;
+  overflow: hidden;
 }
 
-.response-section, .request-section {
-  flex: 1;
-  border: 1px solid #3b3b3b;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  padding: 10px;
-  overflow-y: auto;
+.response-section {
+  margin-left: 0;
+}
+
+.request-section {
+  margin-right: 0;
 }
 
 .response-section h2, .request-section h2 {
@@ -105,6 +131,8 @@
   border-radius: 4px;
   overflow-x: auto;
   border: 1px solid #3b3b3b;
+  flex: 1;
+  overflow: auto;
 }
 
 pre {
@@ -173,7 +201,7 @@ pre {
   border-radius: 4px;
   padding: 15px;
   overflow: auto;
-  max-height: 400px;
+  max-height: none;
 }
 
 .response-content pre, .request-content pre {
@@ -184,114 +212,6 @@ pre {
   font-family: 'Courier New', monospace;
   font-size: 14px;
   line-height: 1.4;
-}
-
-/* Highlight.js 样式 */
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #1e1e1e;
-  color: #d4d4d4;
-}
-
-.hljs-tag,
-.hljs-name,
-.hljs-attribute {
-  color: #6c757d;
-}
-
-.hljs-built_in,
-.hljs-selector-tag,
-.hljs-section,
-.hljs-link {
-  color: #00bfff;
-}
-
-.hljs-keyword {
-  color: #e4e4e4;
-  display: inline-block;
-}
-
-.hljs-string {
-  color: #f9a8d4;
-}
-
-.hljs-title,
-.hljs-attr,
-.hljs-meta-keyword {
-  color: #61aeee;
-}
-
-.hljs-comment,
-.hljs-meta {
-  color: #7f848e;
-}
-
-.hljs-literal,
-.hljs-number {
-  color: #00bfff;
-}
-
-.hljs-regexp {
-  color: #d16969;
-}
-
-.hljs-function .hljs-title {
-  color: #dcdcaa;
-}
-
-.hljs-operator {
-  color: #d4d4d4;
-}
-
-.hljs-subst {
-  color: #d4d4d4;
-}
-
-.hljs-type {
-  color: #4ec9b0;
-}
-
-.hljs-variable {
-  color: #9cdcfe;
-}
-
-.hljs-selector-attr,
-.hljs-selector-pseudo {
-  color: #d7ba7d;
-}
-
-.hljs-addition {
-  background-color: #144212;
-  color: #e6e1dc;
-  display: inline-block;
-  width: 100%;
-}
-
-.hljs-deletion {
-  background-color: #600;
-  color: #e6e1dc;
-  display: inline-block;
-  width: 100%;
-}
-
-/* JSON Viewer 样式调整 */
-.react-json-view {
-  background-color: #2d2d2d !important;
-}
-
-.react-json-view .variable-row {
-  transition: background-color 0.2s;
-}
-
-.react-json-view .variable-row:hover {
-  background-color: #3a3a3a !important;
-}
-
-/* JSON key 样式 */
-.react-json-view .object-key {
-  color: #e4e4e4 !important;
 }
 
 /* 修改后的样式 */
