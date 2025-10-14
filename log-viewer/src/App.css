@@ -214,6 +214,20 @@ pre {
   line-height: 1.4;
 }
 
+/* 添加curl命令区域的悬停和点击样式 */
+.request-content pre[style*="cursor: pointer"] {
+  transition: all 0.2s ease;
+}
+
+.request-content pre[style*="cursor: pointer"]:hover {
+  background-color: #3a3a3a;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.request-content pre[style*="cursor: pointer"]:active {
+  background-color: #333;
+}
+
 /* 修改后的样式 */
 body {
     font-family: Tahoma, Arial, sans-serif;
@@ -223,4 +237,25 @@ body {
 
 h1, h2, h3, b {
     color: #f9a8d4; /* 更改标题和加粗文本的颜色 */
+}
+
+/* Toast提示样式 */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #4caf50;
+  color: white;
+  padding: 16px 24px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: fadeInOut 2s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-20px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px); }
 }

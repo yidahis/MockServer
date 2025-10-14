@@ -16,6 +16,7 @@ function App() {
   const [isAtBottom, setIsAtBottom] = useState(true); // 标记是否滚动到底部
   const [selectedResponseSegment, setSelectedResponseSegment] = useState('body'); // 添加响应信息的 segment 状态
   const [selectedRequestSegment, setSelectedRequestSegment] = useState('body'); // 添加请求信息的 segment 状态
+  const [copySuccess, setCopySuccess] = useState(false); // 添加复制成功状态
   const urlListRef = useRef(null); // 用于监听滚动事件
   const pollIntervalRef = useRef(null); // 轮询定时器引用
   const isInitialLoad = useRef(true); // 标记是否为初始加载
@@ -394,6 +395,43 @@ function App() {
     return <pre>{String(content)}</pre>;
   };
 
+  // 新增：生成curl命令
+  const generateCurlCommand = (log) => {
+    const method = log.method;
+    const url = log['full-url'];
+    const headers = log.headers;
+    const body = log.body;
+    
+    let curlCommand = `curl -X ${method} "${url}"`;
+    
+    // 添加headers
+    Object.keys(headers).forEach(key => {
+      curlCommand += ` -H "${key}: ${headers[key]}"`;
+    });
+    
+    // 添加body
+    if (body && typeof body === 'object') {
+      curlCommand += ` -H "Content-Type: application/json" -d '${JSON.stringify(body)}'`;
+    } else if (body) {
+      curlCommand += ` -d '${body}'`;
+    }
+    
+    return curlCommand;
+  };
+
+  // 新增：处理curl命令复制
+  const handleCopyCurl = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopySuccess(true);
+      // 2秒后隐藏toast
+      setTimeout(() => {
+        setCopySuccess(false);
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
+  };
+
   if (error) {
     return <div className="App">错误: {error}</div>;
   }
@@ -416,7 +454,6 @@ function App() {
               >
                 {/* 添加序号显示 */}
                 <span className="sequence-number">{index + 1}</span>
-                <div className="method">{log.method}</div>
                 <div className="url">{log['full-url']}</div>
                 <div className="timestamp">{new Date(log.timestamp).toLocaleString()}</div>
               </li>
@@ -485,11 +522,17 @@ function App() {
                   >
                     Header
                   </button>
+                  <button 
+                    className={selectedRequestSegment === 'info' ? 'active' : ''}
+                    onClick={() => setSelectedRequestSegment('info')}
+                  >
+                    Info
+                  </button>
                 </div>
                 <div className="request-content">
                   {selectedRequestSegment === 'body' ? (
                     renderContent(selectedLog.body)
-                  ) : (
+                  ) : selectedRequestSegment === 'headers' ? (
                     <ReactJson 
                       src={selectedLog.headers}
                       name={false}
@@ -506,6 +549,19 @@ function App() {
                         overflow: 'auto'
                       }}
                     />
+                  ) : (
+                    <div>
+                      <p><strong>Method:</strong> {selectedLog.method}</p>
+                      <p><strong>URL:</strong> {selectedLog['full-url']}</p>
+                      <p><strong>Timestamp:</strong> {new Date(selectedLog.timestamp).toLocaleString()}</p>
+                      <p><strong>Curl Command:</strong></p>
+                      <pre 
+                        onClick={() => handleCopyCurl(generateCurlCommand(selectedLog))}
+                        style={{ cursor: 'pointer', padding: '10px', backgroundColor: '#2d2d2d', border: '1px solid #3b3b3b', borderRadius: '4px' }}
+                      >
+                        {generateCurlCommand(selectedLog)}
+                      </pre>
+                    </div>
                   )}
                 </div>
               </div>
@@ -515,6 +571,12 @@ function App() {
           )}
         </div>
       </div>
+      {/* 添加复制成功提示 */}
+      {copySuccess && (
+        <div className="toast">
+          Curl命令已复制到剪贴板
+        </div>
+      )}
     </div>
   );
 }
