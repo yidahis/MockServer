@@ -45,13 +45,8 @@
   padding: 10px;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.2s;
   color: #666;
   position: relative; /* 添加相对定位，确保序号绝对定位相对于此元素 */
-}
-
-.url-list li:hover {
-  background-color: #f5f5f5;
 }
 
 .url-list li.selected {
