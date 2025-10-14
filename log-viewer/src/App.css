@@ -47,6 +47,7 @@
   text-align: left;
   transition: background-color 0.2s;
   color: #666;
+  position: relative; /* 添加相对定位，确保序号绝对定位相对于此元素 */
 }
 
 .url-list li:hover {
@@ -79,10 +80,11 @@
   top: 5px;
   right: 5px;
   background-color: #3b3b3b;
-  color: white;
+  color: rgb(145, 140, 140);
   padding: 2px 5px;
   border-radius: 4px;
   font-size: 0.8em;
+  z-index: 1; /* 确保序号显示在其他内容之上 */
 }
 
 .log-details {
