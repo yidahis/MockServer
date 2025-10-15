@@ -8,6 +8,20 @@ import { html as formatHtml } from 'js-beautify';
 import ReactJson from 'react-json-view';
 
 function App() {
+  // 检查请求体中是否包含GraphQL查询语句
+  const getGraphQLQuery = (body) => {
+    if (!body) return null;
+    // 常见GraphQL请求格式: { query: '...', variables: {...} }
+    if (typeof body === 'object' && body.query && typeof body.query === 'string') {
+      return body.query;
+    }
+    // 也可能直接是字符串
+    if (typeof body === 'string' && body.trim().toLowerCase().startsWith('query')) {
+      return body;
+    }
+    return null;
+  };
+
   const [logs, setLogs] = useState([]);
   const logsRef = useRef([]);
   const [selectedLog, setSelectedLog] = useState(null);
@@ -18,6 +32,15 @@ function App() {
   const [isAtBottom, setIsAtBottom] = useState(true); // 标记是否滚动到底部
   const [selectedResponseSegment, setSelectedResponseSegment] = useState('body'); // 添加响应信息的 segment 状态
   const [selectedRequestSegment, setSelectedRequestSegment] = useState('body'); // 添加请求信息的 segment 状态
+  const [hasGraphQL, setHasGraphQL] = useState(false);
+
+  useEffect(() => {
+    if (selectedLog) {
+      setHasGraphQL(!!getGraphQLQuery(selectedLog.body));
+    } else {
+      setHasGraphQL(false);
+    }
+  }, [selectedLog]);
   const [copySuccess, setCopySuccess] = useState(false); // 添加复制成功状态
   const [filterText, setFilterText] = useState(''); // 添加筛选文本状态
   const [filterType, setFilterType] = useState('URL'); // 添加筛选类型状态，默认为URL
@@ -826,6 +849,14 @@ function App() {
                   >
                     Info
                   </button>
+                  {hasGraphQL && (
+                    <button
+                      className={selectedRequestSegment === 'graphql' ? 'active' : ''}
+                      onClick={() => setSelectedRequestSegment('graphql')}
+                    >
+                      GraphQL
+                    </button>
+                  )}
                 </div>
                 <div className="request-content">
                   {selectedRequestSegment === 'body' ? (
@@ -847,6 +878,10 @@ function App() {
                         overflow: 'auto'
                       }}
                     />
+                  ) : selectedRequestSegment === 'graphql' ? (
+                    <pre style={{ background: '#2d2d2d', color: '#fff', padding: '1em', borderRadius: '4px', overflow: 'auto', fontSize: '1em' }}>
+                      {getGraphQLQuery(selectedLog.body)}
+                    </pre>
                   ) : (
                     <div>
                       <p><strong>Method:</strong> {selectedLog.method}</p>
