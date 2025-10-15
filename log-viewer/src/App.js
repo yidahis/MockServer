@@ -13,6 +13,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [logFileNames, setLogFileNames] = useState([]); // 存储所有日志文件名
+  const logFileNamesRef = useRef([]); // 用于保存最新的日志文件名
   const [isAtBottom, setIsAtBottom] = useState(true); // 标记是否滚动到底部
   const [selectedResponseSegment, setSelectedResponseSegment] = useState('body'); // 添加响应信息的 segment 状态
   const [selectedRequestSegment, setSelectedRequestSegment] = useState('body'); // 添加请求信息的 segment 状态
@@ -40,24 +41,25 @@ function App() {
         console.warn('解析筛选历史记录失败:', e);
       }
     }
-    
     // 检查是否有保存的选中日志ID
     const savedSelectedLogId = localStorage.getItem('selectedLogId');
     if (savedSelectedLogId) {
       selectedLogIdRef.current = savedSelectedLogId;
     }
-    
     // 初始获取日志文件列表
     fetchLogFileNames(savedSelectedLogId);
-    
     // 设置轮询，每5秒获取一次新增的日志文件列表
     startPolling();
-    
     // 清理函数，组件卸载时清除轮询
     return () => {
       stopPolling();
     };
   }, []);
+
+  // 保证 logFileNamesRef.current 始终是最新的 logFileNames
+  useEffect(() => {
+    logFileNamesRef.current = logFileNames;
+  }, [logFileNames]);
 
   // 当滚动到底部时重新开始轮询
   useEffect(() => {
@@ -96,7 +98,6 @@ function App() {
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
     }
-    
     // 设置新的轮询，每5秒获取一次新增的日志文件列表
     pollIntervalRef.current = setInterval(() => {
       fetchLogFileNames();
@@ -130,34 +131,31 @@ function App() {
   // 获取日志文件列表
   const fetchLogFileNames = async (savedSelectedLogId = null) => {
     try {
-      // 确定最新的文件名（用于获取新增数据）
+      // 使用 logFileNamesRef.current 获取最新的文件名数组
       let latestFileName = null;
-      if (logFileNames.length > 0) {
+      const currentFileNames = logFileNamesRef.current;
+      if (currentFileNames.length > 0) {
         // 获取时间戳最大的文件名（最新的）
-        latestFileName = logFileNames.reduce((latest, current) => {
+        latestFileName = currentFileNames.reduce((latest, current) => {
           const latestTimestamp = parseInt(latest.split('_')[0]) || 0;
           const currentTimestamp = parseInt(current.split('_')[0]) || 0;
           return currentTimestamp > latestTimestamp ? current : latest;
-        }, logFileNames[0]);
+        }, currentFileNames[0]);
       }
-      
       // 使用主服务提供的API端点获取日志文件列表
       const url = latestFileName 
         ? `http://localhost:3000/api/logs/files?latest=${encodeURIComponent(latestFileName)}`
         : 'http://localhost:3000/api/logs/files';
-      
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         // 修复：处理后端返回的数据格式 {files: [...]} 
         const files = Array.isArray(data) ? data : (data.files || []);
-        
         // 如果有新增文件
         if (files.length > 0) {
           // 更新文件名列表
-          const updatedFileNames = [...logFileNames, ...files];
+          const updatedFileNames = [...currentFileNames, ...files];
           setLogFileNames(updatedFileNames);
-          
           // 获取新增文件的内容
           await fetchNewLogs(files, savedSelectedLogId);
         } else if (isInitialLoad.current) {
