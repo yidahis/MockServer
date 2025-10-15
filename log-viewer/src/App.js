@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, use } from 'react';
 import hljs from 'highlight.js';
 // 将默认主题更换为atom-one-dark主题
 import 'highlight.js/styles/atom-one-dark.css';
@@ -9,6 +9,7 @@ import ReactJson from 'react-json-view';
 
 function App() {
   const [logs, setLogs] = useState([]);
+  const logsRef = useRef([]);
   const [selectedLog, setSelectedLog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -60,6 +61,10 @@ function App() {
   useEffect(() => {
     logFileNamesRef.current = logFileNames;
   }, [logFileNames]);
+
+  useEffect(() => {
+    logsRef.current = logs;
+  }, [logs]);
 
   // 当滚动到底部时重新开始轮询
   useEffect(() => {
@@ -232,7 +237,7 @@ function App() {
       newLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       
       // 将新增日志追加到现有日志列表
-      const updatedLogs = [...logs, ...newLogs];
+      const updatedLogs = [...logsRef.current, ...newLogs];
       setLogs(updatedLogs);
       
       // 处理选中状态 - 关键修改：使用更严格的逻辑
