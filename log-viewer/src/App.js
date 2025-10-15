@@ -591,29 +591,54 @@ function App() {
     });
   };
 
+
+  // 新增：删除所有日志并清空前端列表
+  const handleDeleteAllLogs = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/logs/delete_all', {
+        method: 'POST',
+      });
+      if (response.ok) {
+        setLogs([]);
+        setLogFileNames([]);
+        setSelectedLog(null);
+      } else {
+        const data = await response.json();
+        alert('Deletion failed: ' + (data.error || response.status));
+      }
+    } catch (err) {
+      alert('Request failed: ' + err);
+    }
+  };
+
   if (error) {
     return <div className="App">错误: {error}</div>;
   }
 
   return (
     <div className="App">
-      <header className="App-header">
-        <p>
-          共有 {logs.length} 条请求日志
-          {filterText && ` (筛选出 ${logs.filter(log => log['full-url'] && typeof log['full-url'] === 'string' && log['full-url'].includes(filterText)).length} 条)`}
-        </p>
+      <header className="App-header" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '64px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+          <p style={{ margin: 0 }}>
+            TOTAL: {logs.length} 
+            {filterText && ` (筛选出 ${logs.filter(log => log['full-url'] && typeof log['full-url'] === 'string' && log['full-url'].includes(filterText)).length} 条)`}
+          </p>
+          <button onClick={handleDeleteAllLogs} style={{ padding: '6px 16px', fontWeight: 'bold', fontSize: '1em', background: '#2d2d2d', color: '#fff', border: '1px solid #3b3b3b', borderRadius: '4px', cursor: 'pointer' }}>
+            ReStart
+          </button>
+        </div>
       </header>
       <div className="logs-container">
         {/* 左侧URL列表 */}
         <div className="url-list" ref={urlListRef}>
           <div className="url-list-header" id="url-list-header">
-            <h2>请求URL列表</h2>
+            <h2>ALL URLS</h2>
             <div className="search-container-wrapper">
               <div className="search-container">
                 <div className="search-input-container">
                   <input
                     type="text"
-                    placeholder={`输入${filterType}关键词进行筛选`}
+                    placeholder={`Please enter ${filterType} keywords to filter`}
                     value={filterText}
                     onChange={(e) => handleFilterChange(e.target.value)}
                     onFocus={() => filterHistory.length > 0 && setShowHistory(true)}
@@ -697,7 +722,7 @@ function App() {
                             );
                           })
                       ) : (
-                        <li className="empty-history">暂无历史记录</li>
+                        <li className="empty-history">No history available</li>
                       )}
                     </ul>
                   </div>
@@ -707,7 +732,7 @@ function App() {
             <div className="filter-stats">
               {filterText && (
                 <p>
-                  筛选类型: {filterType} | 筛选结果: {filterLogs(logs, filterText, filterType).length} / {logs.length} 条记录
+                  Filter Type: {filterType} | Filter Results: {filterLogs(logs, filterText, filterType).length} / {logs.length} 条记录
                 </p>
               )}
             </div>
@@ -840,14 +865,14 @@ function App() {
               </div>
             </div>
           ) : (
-            <p>请选择一个请求查看详细信息</p>
+            <p>Please select a request to view details</p>
           )}
         </div>
       </div>
       {/* 添加复制成功提示 */}
       {copySuccess && (
         <div className="toast">
-          Curl命令已复制到剪贴板
+          The Curl command has been copied to the clipboard
         </div>
       )}
     </div>

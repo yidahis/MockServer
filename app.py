@@ -82,13 +82,10 @@ def handle_request(path):
         if not origin_host:
             return {'error': 'Missing origin-host header'}, 400
         
-        # 构造转发URL
-        forward_url = f"{origin_host.rstrip('/')}/{path.lstrip('/')}"
-        
     # 记录开始时间（使用 time.time() 浮点数，便于后续计算）
         start_time = time.time()
 
-        full_url = request.url
+        full_url = origin_host
         # 新增：keyword 字段逻辑
         keyword = None
         try:
@@ -178,6 +175,23 @@ def get_log_file(filename):
         return send_from_directory(LOGS_DIR, filename)
     except Exception as e:
         return {'error': str(e)}, 404
+
+
+# 新增：删除 logs 目录下所有日志文件的接口
+@app.route('/api/logs/delete_all', methods=['POST'])
+def delete_all_logs():
+    if not os.path.exists(LOGS_DIR):
+        return {'error': 'Logs directory not found'}, 404
+    try:
+        deleted_files = []
+        for f in os.listdir(LOGS_DIR):
+            file_path = os.path.join(LOGS_DIR, f)
+            if os.path.isfile(file_path) and f.endswith('.json'):
+                os.remove(file_path)
+                deleted_files.append(f)
+        return {'deleted': deleted_files, 'count': len(deleted_files)}
+    except Exception as e:
+        return {'error': str(e)}, 500
 
 def main():
     """主函数，用于命令行运行"""
