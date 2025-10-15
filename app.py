@@ -89,12 +89,33 @@ def handle_request(path):
         start_time = time.time()
 
         full_url = request.url
+        # 新增：keyword 字段逻辑
+        keyword = None
+        try:
+            with open(os.path.join(os.path.dirname(__file__), 'keywordsForRequeson.json'), 'r', encoding='utf-8') as kf:
+                keywords_map = json.load(kf)
+            # keywords_map 可能是 list 或 dict
+            if isinstance(keywords_map, list):
+                # 转为 dict
+                temp_map = {}
+                for item in keywords_map:
+                    temp_map.update(item)
+                keywords_map = temp_map
+            # 查找 path 对应的 key
+            if path in keywords_map:
+                key_to_find = keywords_map[path]
+                if isinstance(body, dict) and key_to_find in body:
+                    keyword =  key_to_find + ": " + body[key_to_find]
+        except Exception as e:
+            print(f"[LOG] keyword parse error: {e}")
+
         req_info = {
-        'timestamp': datetime.now().isoformat(),
-        'method': request.method,
-        'full-url': full_url,
-        'headers': dict(request.headers),
-        'body': body
+            'timestamp': datetime.now().isoformat(),
+            'method': request.method,
+            'full-url': full_url,
+            'headers': dict(request.headers),
+            'body': body,
+            'keyword': keyword
         }
         
         # 转发请求

@@ -724,7 +724,11 @@ function App() {
                     {/* 添加序号显示，基于筛选后的列表 */}
                     <span className="sequence-number">{index + 1}</span>
                     <div className="url">{log['full-url']}</div>
+                    {log.keyword ? (
+                      <div className="keyword">{log.keyword}</div>
+                    ) : null}
                     <div className="timestamp">{new Date(log.timestamp).toLocaleString()}</div>
+                    
                   </li>
                 ))}
             </ul>

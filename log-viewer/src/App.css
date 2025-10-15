@@ -257,6 +257,12 @@
   color: #666;
 }
 
+.url-list .keyword {
+  font-size: 0.66em;
+  color: #9b999a;
+  margin-top: 5px;
+}
+
 .url-list li .sequence-number {
   position: absolute;
   top: 5px;
