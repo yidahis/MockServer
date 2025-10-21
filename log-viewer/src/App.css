@@ -1,3 +1,4 @@
+
 .App {
   text-align: center;
   background-color: #101010;
@@ -419,14 +420,16 @@ pre {
 }
 
 /* 修改后的样式 */
-body {
-    font-family: Tahoma, Arial, sans-serif;
-    background-color: #1e1e1e; /* 更改背景颜色为暗色主题 */
-    color: #d4d4d4; /* 更改文本颜色为亮色 */
+body, html {
+  font-family: Tahoma, Arial, sans-serif;
+  background-color: #1e1e1e; /* 更改背景颜色为暗色主题 */
+  color: #d4d4d4; /* 更改文本颜色为亮色 */
+  overflow: hidden !important; /* 禁止页面整体滑动 */
+  touch-action: none;
 }
 
 h1, h2, h3, b {
-    color: #f9a8d4; /* 更改标题和加粗文本的颜色 */
+    color: #16010d; /* 更改标题和加粗文本的颜色 */
 }
 
 /* Toast提示样式 */

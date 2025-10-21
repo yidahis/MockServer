@@ -7,7 +7,87 @@ import './App.css';
 import { html as formatHtml } from 'js-beautify';
 import ReactJson from 'react-json-view';
 
-function App() {
+function App() {  
+  // mock状态管理：key为url，值为'mocking'或'normal'
+  const [mockStatus, setMockStatus] = useState({});
+
+  const [logs, setLogs] = useState([]);
+  const logsRef = useRef([]);
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [logFileNames, setLogFileNames] = useState([]); // 存储所有日志文件名
+  const logFileNamesRef = useRef([]); // 用于保存最新的日志文件名
+  const [isAtBottom, setIsAtBottom] = useState(true); // 标记是否滚动到底部
+  const [selectedResponseSegment, setSelectedResponseSegment] = useState('body'); // 添加响应信息的 segment 状态
+  const [selectedRequestSegment, setSelectedRequestSegment] = useState('body'); // 添加请求信息的 segment 状态
+  const [hasGraphQL, setHasGraphQL] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false); // 添加复制成功状态
+  const [filterText, setFilterText] = useState(''); // 添加筛选文本状态
+  const [filterType, setFilterType] = useState('URL'); // 添加筛选类型状态，默认为URL
+  const [filterHistory, setFilterHistory] = useState([]); // 添加筛选历史记录状态
+  const [showHistory, setShowHistory] = useState(false); // 添加显示历史记录状态
+  const [showFilterTypeDropdown, setShowFilterTypeDropdown] = useState(false); // 添加显示筛选类型下拉菜单状态
+  const [isInteractingWithHistory, setIsInteractingWithHistory] = useState(false); // 添加与历史记录交互状态
+  const urlListRef = useRef(null); // 用于监听滚动事件
+  const urlListContentRef = useRef(null); // 用于获取内容区域的引用
+  const pollIntervalRef = useRef(null); // 轮询定时器引用
+  const isInitialLoad = useRef(true); // 标记是否为初始加载
+  const selectedLogIdRef = useRef(null); // 使用ref存储选中的日志ID，避免状态更新的影响
+
+  // 判断当前选中日志是否mocking（与URL绑定），安全访问
+  const isMocking = selectedLog ? mockStatus[selectedLog['full-url']] === 'mocking' : false;
+
+  // 选中日志时自动查询mock状态
+  useEffect(() => {
+    if (selectedLog && selectedLog['full-url']) {
+      fetch('http://localhost:3000/api/logs/is_mocked', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 'full-url': selectedLog['full-url'] })
+      })
+        .then(res => res.json())
+        .then(data => {
+          setMockStatus(prev => ({ ...prev, [selectedLog['full-url']]: data.mocked ? 'mocking' : 'normal' }));
+        })
+        .catch(() => {
+          setMockStatus(prev => ({ ...prev, [selectedLog['full-url']]: 'normal' }));
+        });
+    }
+  }, [selectedLog]);
+  // mock按钮点击事件
+  const handleMockButtonClick = async () => {
+    if (!selectedLog || !selectedLog.fileName || !selectedLog['full-url']) return;
+    const fileName = selectedLog.fileName;
+    const urlKey = selectedLog['full-url'];
+    if (selectedLog && !isMocking) {
+      // normal状态，调用move_to_mocked
+      try {
+        const res = await fetch('http://localhost:3000/api/logs/move_to_mocked', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setMockStatus(prev => ({ ...prev, [urlKey]: 'mocking' }));
+        }
+      } catch (e) { console.error(e); }
+    } else if (selectedLog && isMocking) {
+      // mocking状态，调用move_to_logs
+      try {
+        const res = await fetch('http://localhost:3000/api/logs/move_to_logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setMockStatus(prev => ({ ...prev, [urlKey]: 'normal' }));
+        }
+      } catch (e) { console.error(e); }
+    }
+  };
   // 检查请求体中是否包含GraphQL查询语句
   const getGraphQLQuery = (body) => {
     if (!body) return null;
@@ -22,17 +102,7 @@ function App() {
     return null;
   };
 
-  const [logs, setLogs] = useState([]);
-  const logsRef = useRef([]);
-  const [selectedLog, setSelectedLog] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [logFileNames, setLogFileNames] = useState([]); // 存储所有日志文件名
-  const logFileNamesRef = useRef([]); // 用于保存最新的日志文件名
-  const [isAtBottom, setIsAtBottom] = useState(true); // 标记是否滚动到底部
-  const [selectedResponseSegment, setSelectedResponseSegment] = useState('body'); // 添加响应信息的 segment 状态
-  const [selectedRequestSegment, setSelectedRequestSegment] = useState('body'); // 添加请求信息的 segment 状态
-  const [hasGraphQL, setHasGraphQL] = useState(false);
+  
 
   useEffect(() => {
     if (selectedLog) {
@@ -41,18 +111,7 @@ function App() {
       setHasGraphQL(false);
     }
   }, [selectedLog]);
-  const [copySuccess, setCopySuccess] = useState(false); // 添加复制成功状态
-  const [filterText, setFilterText] = useState(''); // 添加筛选文本状态
-  const [filterType, setFilterType] = useState('URL'); // 添加筛选类型状态，默认为URL
-  const [filterHistory, setFilterHistory] = useState([]); // 添加筛选历史记录状态
-  const [showHistory, setShowHistory] = useState(false); // 添加显示历史记录状态
-  const [showFilterTypeDropdown, setShowFilterTypeDropdown] = useState(false); // 添加显示筛选类型下拉菜单状态
-  const [isInteractingWithHistory, setIsInteractingWithHistory] = useState(false); // 添加与历史记录交互状态
-  const urlListRef = useRef(null); // 用于监听滚动事件
-  const urlListContentRef = useRef(null); // 用于获取内容区域的引用
-  const pollIntervalRef = useRef(null); // 轮询定时器引用
-  const isInitialLoad = useRef(true); // 标记是否为初始加载
-  const selectedLogIdRef = useRef(null); // 使用ref存储选中的日志ID，避免状态更新的影响
+  
 
   // 获取日志文件列表
   useEffect(() => {
@@ -242,6 +301,7 @@ function App() {
           const response = await fetch(`http://localhost:3000/logs/${fileName}`);
           if (response.ok) {
             const logData = await response.json();
+            logData.fileName = fileName;
             return logData;
           } else {
             console.warn(`无法从API读取日志文件 ${fileName}: ${response.status}`);
@@ -787,7 +847,7 @@ function App() {
         <div className="log-details">
           {selectedLog ? (
             <div className="details-container">
-              <div className="response-section">
+              <div className="response-section" style={{position:'relative'}}>
                 <h2>Response</h2>
                 {/* 添加 segment 控制 */}
                 <div className="segment-control">
@@ -804,7 +864,10 @@ function App() {
                     Header
                   </button>
                 </div>
+
                 <div className="response-content">
+                  
+
                   {selectedResponseSegment === 'body' ? (
                     renderContent(selectedLog.response.body)
                   ) : (
@@ -826,6 +889,28 @@ function App() {
                     />
                   )}
                 </div>
+                  <button
+                    style={{
+                      position: 'absolute',
+                      right: '16px',
+                      bottom: '16px',
+                      padding: '6px 16px',
+                      fontWeight: 'bold',
+                      fontSize: '1em',
+                      width: '80px',
+                      background: isMocking ? '#388e3c' : '#d32f2f',
+                      color: '#fff',
+                      border: '1px solid #3b3b3b',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      zIndex: 100
+                    }}
+                    title={isMocking ? 'Cancel' : 'Mock'}
+                    onClick={handleMockButtonClick}
+                  >
+                    {isMocking ? 'Cancel' : 'Mock'}
+                  </button>
+               
               </div>
               <div className="request-section">
                 <h2>Request</h2>

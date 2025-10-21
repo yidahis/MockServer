@@ -14,21 +14,26 @@ CORS(app)  # 添加CORS支持
 MOCKED_DIR = os.path.join(os.path.dirname(__file__), 'mocked')
 LOGS_DIR = os.path.join(os.path.dirname(__file__), 'logs')
 
+
 def match_json_response(url, body):
-    # 获取所有文件夹
-    folders = [f for f in os.listdir(MOCKED_DIR) if os.path.isdir(os.path.join(MOCKED_DIR, f))]
-    # 匹配 URL
-    matched_folder = next((folder for folder in folders if folder in url.replace('/', ':')), None)
-    if matched_folder and isinstance(body, dict):
-        folder_path = os.path.join(MOCKED_DIR, matched_folder)
-        json_files = [f for f in os.listdir(folder_path) if f.endswith('.json')]
-        body_str = json.dumps(body)
-        for file in json_files:
-            file_name = os.path.splitext(file)[0]
-            if file_name in body_str:
-                with open(os.path.join(folder_path, file), 'r', encoding='utf-8') as f:
-                    return f.read()
+    # 新规则：遍历mocked目录下所有json文件，判断其内容中的full-url字段是否与url相等
+    json_files = [f for f in os.listdir(MOCKED_DIR) if f.endswith('.json')]
+    for file in json_files:
+        file_path = os.path.join(MOCKED_DIR, file)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            # 判断json内容中的full-url字段是否与url相等
+            if isinstance(data, dict) and data.get('full-url') == url:
+                # 只返回json文件中response下的body部分
+                response_body = None
+                if isinstance(data.get('response'), dict):
+                    response_body = data['response'].get('body', None)
+                return json.dumps(response_body, ensure_ascii=False)
+        except Exception as e:
+            continue   
     return None
+
 
 def get_log_files():
     """获取日志目录中的所有文件列表"""
@@ -40,6 +45,7 @@ def get_log_files():
     except Exception as e:
         print(f"获取日志文件列表失败: {e}")
         return []
+
 
 def get_newer_log_files(latest_file_name):
     """获取比指定文件更新的所有日志文件"""
@@ -63,6 +69,26 @@ def get_newer_log_files(latest_file_name):
         print(f"获取新日志文件列表失败: {e}")
         return []
 
+
+@app.route('/api/logs/is_mocked', methods=['POST'])
+def is_mocked():
+    data = request.get_json()
+    full_url = data.get('full-url') if data else None
+    if not full_url:
+        return {'error': 'Missing full-url parameter'}, 400
+    json_files = [f for f in os.listdir(MOCKED_DIR) if f.endswith('.json')]
+    for file in json_files:
+        file_path = os.path.join(MOCKED_DIR, file)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = json.load(f)
+            if isinstance(content, dict) and content.get('full-url') == full_url:
+                return {'mocked': True}
+        except Exception:
+            continue
+    return {'mocked': False}
+
+
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 def handle_request(path):
     try:
@@ -72,15 +98,16 @@ def handle_request(path):
         except:
             body = {}
         
-        # 尝试匹配本地JSON响应
-        matched_response = match_json_response(request.url, body)
-        if matched_response:
-            return Response(matched_response, mimetype='application/json')
-        
         # 如果没有匹配到本地响应，则转发请求
         origin_host = request.headers.get('origin-host')
         if not origin_host:
             return {'error': 'Missing origin-host header'}, 400
+        
+         # 尝试匹配本地JSON响应
+        matched_response = match_json_response(origin_host, body)
+        if matched_response:
+            return Response(matched_response, mimetype='application/json')
+        
         
     # 记录开始时间（使用 time.time() 浮点数，便于后续计算）
         start_time = time.time()
@@ -124,11 +151,16 @@ def handle_request(path):
             json=body if request.method == 'POST' else None
         )
         safe_headers = {k: v for k, v in resp.headers.items() if k.lower() not in ['content-length', 'transfer-encoding', 'connection', 'content-encoding']}
+        # 尝试将resp.content解码为json
+        try:
+            body_json = resp.json()
+        except Exception:
+            body_json = resp.content.decode('utf-8', errors='replace')
         resp_info = {
             'url': target_url,
             'status_code': resp.status_code,
             'headers': safe_headers,
-            'body': resp.content.decode('utf-8', errors='replace')
+            'body': body_json
         }
 
         log_dir = os.path.join(os.path.dirname(__file__), 'logs')
@@ -140,7 +172,7 @@ def handle_request(path):
         req_info['cost'] = round(time.time() - start_time, 4)
         req_info['response'] = resp_info
         # 保存日志
-        log_path = safe_log_path(target_url or url)
+        log_path = safe_log_path(target_url)
         try:
             print(f"[LOG] Writing to {log_path}")
             with open(log_path, 'w', encoding='utf-8') as f:
@@ -157,6 +189,7 @@ def handle_request(path):
     except Exception as e:
         return {'error': str(e)}, 500
 
+
 @app.route('/api/logs/files')
 def get_log_files_api():
     latest = request.args.get('latest')
@@ -165,6 +198,7 @@ def get_log_files_api():
     else:
         files = get_log_files()
     return {'files': files}
+
 
 @app.route('/logs/<filename>')
 def get_log_file(filename):
@@ -193,10 +227,48 @@ def delete_all_logs():
     except Exception as e:
         return {'error': str(e)}, 500
 
+
+# 新增：移动日志文件到 mocked 目录
+@app.route('/api/logs/move_to_mocked', methods=['POST'])
+def move_log_to_mocked():
+    data = request.get_json()
+    filename = data.get('fileName') if data else None
+    if not filename:
+        return {'error': 'Missing filename parameter'}, 400
+    src_path = os.path.join(LOGS_DIR, filename)
+    dst_path = os.path.join(MOCKED_DIR, filename)
+    if not os.path.exists(src_path):
+        return {'error': 'Source log file not found'}, 404
+    try:
+        os.rename(src_path, dst_path)
+        return {'success': True, 'moved': filename}
+    except Exception as e:
+        return {'error': str(e)}, 500
+
+
+# 新增：取消mock，移动文件从mocked回logs
+@app.route('/api/logs/move_to_logs', methods=['POST'])
+def move_log_to_logs():
+    data = request.get_json()
+    filename = data.get('fileName') if data else None
+    if not filename:
+        return {'error': 'Missing filename parameter'}, 400
+    src_path = os.path.join(MOCKED_DIR, filename)
+    dst_path = os.path.join(LOGS_DIR, filename)
+    if not os.path.exists(src_path):
+        return {'error': 'Source mocked file not found'}, 404
+    try:
+        os.rename(src_path, dst_path)
+        return {'success': True, 'moved': filename}
+    except Exception as e:
+        return {'error': str(e)}, 500
+
+
 def main():
     """主函数，用于命令行运行"""
     port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port, debug=True)
+
 
 if __name__ == '__main__':
     main()
